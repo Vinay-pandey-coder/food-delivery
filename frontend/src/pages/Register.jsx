@@ -3,6 +3,10 @@ import { FaRegEye } from "react-icons/fa";
 import { FaEyeSlash } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import { serverUrl } from "../App";
+import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { auth } from "../../firebase";
 
 const Register = () => {
   const primaryColor = "#ff4d2d";
@@ -19,9 +23,44 @@ const Register = () => {
   const [password, setPassword] = useState("");
   const [mobile, setMobile] = useState("");
 
-  const handelSingup = async()=>{
-    
+  const handelSingup = async () => {
+    try {
+      const result = await axios.post(
+        `${serverUrl}/api/auth/register`,
+        {
+          fullName,
+          email,
+          password,
+          mobile,
+          role,
+        },
+        { withCredentials: true },
+      );
+      console.log(result);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+const handelGoogleAuth = async () => {
+  if (!mobile) {
+    return alert("Mobile number is required");
   }
+
+  const provider = new GoogleAuthProvider();
+  const result = await signInWithPopup(auth, provider);
+  try {
+    const {data} = await axios.post(`${serverUrl}/api/auth/google-auth`,{
+      fullName:result.user.displayName,
+      email:result.user.email,
+      mobile,
+      role,
+    },{withCredentials:true})
+    console.log(data)
+  } catch (error) {
+    console.log(error)
+  } 
+};
 
   return (
     <>
@@ -88,7 +127,7 @@ const Register = () => {
               Mobile
             </label>
             <input
-              type="number"
+              type="text"
               className="w-full border rounded-lg px-3 py-2 focus:outline-none"
               placeholder="Enter your Mobile Number"
               style={{ border: `1px solid ${borderColor}` }}
@@ -134,10 +173,11 @@ const Register = () => {
             <div className="flex gap-2">
               {["user", "owner", "deliveryBoy"].map((r) => (
                 <button
-                  className=" cursor-pointer flex-1 border rounded-lg px-3 py-2 text-center font-medium transition-colors"
+                  key={r}
+                  className="cursor-pointer flex-1 border rounded-lg px-3 py-2 text-center font-medium transition-colors"
                   onClick={() => setRole(r)}
                   style={
-                    role == r
+                    role === r
                       ? { backgroundColor: primaryColor, color: "white" }
                       : {
                           border: `1px solid ${primaryColor}`,
@@ -151,12 +191,13 @@ const Register = () => {
             </div>
           </div>
           <button
+            onClick={handelSingup}
             className={`w-full font-semibold py-2 rounded-lg transition duration-200 cursor-pointer bg-[#ff4d2d] text-white hover:bg-[#e64323]`}
           >
             Register
           </button>
 
-          <button className="w-full mt-4 flex items-center justify-center gap-2 border rounded-lg px-4 py-2 transition duration-200 cursor-pointer border-gray-200 hover:bg-gray-200">
+          <button onClick={handelGoogleAuth} className="w-full mt-4 flex items-center justify-center gap-2 border rounded-lg px-4 py-2 transition duration-200 cursor-pointer border-gray-200 hover:bg-gray-200">
             <FcGoogle size={20} />
             <span>Sing up with Google</span>
           </button>
